@@ -3,45 +3,18 @@ param (
     [string][Alias('out')]$packageOutputDirectory
 )
 
+Write-Host "DownloadPackagesFromGithub: ($sqlToolsVersion, $packageOutputDirectory)"
+
 $githubReleasePackageName = "Microsoft.SqlTools.ServiceLayer"
 $githubReleasePackageUri = "https://github.com/microsoft/sqltoolsservice/releases/download/"
 $githubLicenseText = "https://raw.githubusercontent.com/microsoft/sqltoolsservice/main/license.txt"
 $githubSqlToolsSdkIcon = "https://microsoft.github.io/sqltoolssdk/images/sqlserver.png"
 
+$sqlVersion="v$sqlToolsVersion"
+$downloads=$packageOutputDirectory
+
 function Create-Directory ([string[]] $path) {
     New-Item -Path $path -Force -ItemType 'Directory' | Out-Null
-}
-
-# This will exec a process using the console and return it's exit code.
-# This will not throw when the process fails.
-# Returns process exit code.
-function Exec-Process([string]$command, [string]$commandArgs) {
-  $startInfo = New-Object System.Diagnostics.ProcessStartInfo
-  $startInfo.FileName = $command
-  $startInfo.Arguments = $commandArgs
-  $startInfo.UseShellExecute = $false
-  $startInfo.WorkingDirectory = Get-Location
-
-  $process = New-Object System.Diagnostics.Process
-  $process.StartInfo = $startInfo
-  $process.Start() | Out-Null
-
-  $finished = $false
-  try {
-    while (-not $process.WaitForExit(100)) {
-      # Non-blocking loop done to allow ctr-c interrupts
-    }
-
-    $finished = $true
-    return $global:LASTEXITCODE = $process.ExitCode
-  }
-  finally {
-    # If we didn't finish then an error occurred or the user hit ctrl-c.  Either
-    # way kill the process
-    if (-not $finished) {
-      $process.Kill()
-    }
-  }
 }
 
 function Unzip([string]$zipfile, [string]$outpath) {
@@ -69,7 +42,6 @@ Function DeGZip-File{
 function DownloadPackageFromGithub {
     Param ($rootdir, $filename, $uri)
 
-    Write-Host "DownloadPackageFromGithub:   ($rootdir, $filename, $uri)"
     $isTarGz = $filename.EndsWith(".tar.gz")
     Create-Directory $rootdir
 
@@ -88,7 +60,7 @@ function DownloadPackageFromGithub {
         Create-Directory $packageDir
         $tarfile = $dlfile + ".tar"
         DeGZip-File $dlFile $tarfile
-        Exec-Process "tar" "-zxf $tarfile  -C $packageDir"
+        tar -xf $tarfile  -C $packageDir
     }
     else {
         $packageDir = Join-Path "$rootdir"  ($filename -replace ".zip", "")
@@ -105,6 +77,7 @@ function DownloadPackageFromGithub {
 function DownloadPackagesFromGithub {
     Param ($basename, $version, $uribase, $rootdir)
     Write-Host "DownloadPackagesFromGithub: ($basename, $version, $uribase, $rootdir)"
+
     try { [System.IO.Directory]::Delete($rootdir, $true) } catch {}
     try { Create-Directory $rootdir } catch {}
 
@@ -116,7 +89,6 @@ function DownloadPackagesFromGithub {
     $tarext = ".tar.gz"
     $zipext = ".zip"
     $netcoreapp31tfm = "netcoreapp3.1"
-
     <# Download .tar.gz files #>
     "osx-x64", "rhel-x64" | ForEach-Object {
         $packagename = $basename + "-" + $_ + "-" + $netcoreapp31tfm + $tarext
@@ -130,4 +102,30 @@ function DownloadPackagesFromGithub {
     }
 }
 
-DownloadPackagesFromGithub $githubReleasePackageName $sqlToolsVersion $githubReleasePackageUri $packageOutputDirectory
+DownloadPackagesFromGithub $githubReleasePackageName $sqlVersion $githubReleasePackageUri $packageOutputDirectory
+
+$outputPath=(Join-Path $PSScriptRoot "../artifacts/packages/Release/Shipping")
+New-Item -Path $outputPath -ItemType Directory -Force
+
+$projRoot=(Join-Path $PSScriptRoot "../src/Microsoft.SqlToolsService")
+
+dotnet pack "$projRoot/runtime.osx-x64.native.Microsoft.SqlToolsService/runtime.osx-x64.native.Microsoft.SqlToolsService.csproj" /p:SqlToolsVersion=$sqlToolsVersion --configuration Release -o $outputPath
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+dotnet pack "$projRoot/runtime.rhel-x64.native.Microsoft.SqlToolsService/runtime.rhel-x64.native.Microsoft.SqlToolsService.csproj" /p:SqlToolsVersion=$sqlToolsVersion --configuration Release -o $outputPath
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+dotnet pack "$projRoot/runtime.win-x64.native.Microsoft.SqlToolsService/runtime.win-x64.native.Microsoft.SqlToolsService.csproj" /p:SqlToolsVersion=$sqlToolsVersion --configuration Release -o $outputPath
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+dotnet pack "$projRoot/runtime.win-x86.native.Microsoft.SqlToolsService/runtime.win-x86.native.Microsoft.SqlToolsService.csproj" /p:SqlToolsVersion=$sqlToolsVersion --configuration Release -o $outputPath
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+dotnet pack "$projRoot/runtime.win10-arm.native.Microsoft.SqlToolsService/runtime.win10-arm.native.Microsoft.SqlToolsService.csproj" /p:SqlToolsVersion=$sqlToolsVersion --configuration Release -o $outputPath
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+dotnet pack "$projRoot/runtime.win10-arm64.native.Microsoft.SqlToolsService/runtime.win10-arm64.native.Microsoft.SqlToolsService.csproj" /p:SqlToolsVersion=$sqlToolsVersion --configuration Release -o $outputPath
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+dotnet pack "$projRoot/Microsoft.SqlToolsService.csproj" /p:SqlToolsVersion=$sqlToolsVersion --configuration Release -o $outputPath
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

@@ -17,30 +17,19 @@ function isCi {
 }
 $isCi = isCi
 
-function buildConfiguration {
-    $release = $arguments | Select-String -Pattern ('release', 'debug') -SimpleMatch -CaseSensitive
-    if ([System.String]::IsNullOrWhitespace($release) -eq $true) {
-        return "Debug"
-    }
-    else {
-        return "$release"
-    }
-}
-$buildConfiguration = buildConfiguration
-
 try {
     if (isCi -eq $true) {
-        . (Join-Path $PSScriptRoot "..\buildSqlTools.cmd") $buildConfiguration
-        if ($LASTEXITCODE -ne 0) {
-            exit $LASTEXITCODE
-        }
+
+        $sqlVersion="3.0.0-release.52"
+        $downloads=(Join-Path $PSScriptRoot "..\artifacts\downloads")
+
+        . (Join-Path $PSScriptRoot "DownLoadSqlToolsService.ps1") Release -out $downloads -version "$sqlVersion"
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     }
 
     # invoke regular build/test script
     . (Join-Path $PSScriptRoot "common\build.ps1") -projects "$PSScriptRoot\..\dotnet-interactive.sln" @args
-    if ($LASTEXITCODE -ne 0) {
-        exit $LASTEXITCODE
-    }
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 catch {
     Write-Host $_
