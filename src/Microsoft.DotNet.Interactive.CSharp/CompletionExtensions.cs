@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Collections.Immutable;
+using System.Linq;
 using Microsoft.CodeAnalysis.Tags;
 using Microsoft.DotNet.Interactive.Events;
 using RoslynCompletionDescription = Microsoft.CodeAnalysis.Completion.CompletionDescription;
@@ -56,7 +57,9 @@ namespace Microsoft.DotNet.Interactive.CSharp
                 kind: item.GetKind(),
                 filterText: item.FilterText,
                 sortText: item.SortText,
-                insertText: item.FilterText,
+                insertText: item.Tags.Any(t => t == "Method")
+                                ? item.FilterText + "("
+                                : item.FilterText,
                 documentation: description.Text);
         }
     }

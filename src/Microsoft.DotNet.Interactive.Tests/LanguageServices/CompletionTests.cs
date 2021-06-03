@@ -1,10 +1,12 @@
 ﻿// Copyright (c) .NET Foundation and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.DotNet.Interactive.Commands;
 using Microsoft.DotNet.Interactive.Events;
+using Microsoft.DotNet.Interactive.Formatting;
 using Microsoft.DotNet.Interactive.Tests.Utility;
 using Xunit;
 using Xunit.Abstractions;
@@ -458,6 +460,58 @@ public class C
                 .Completions
                 .Should()
                 .ContainSingle(ci => !string.IsNullOrEmpty(ci.Documentation) && ci.Documentation.Contains("Represents JavaScript's null as a string. This field is read-only."));
+        }
+
+        [Theory]
+        [InlineData(Language.CSharp)]
+        public async Task Parentheses_are_inserted_when_completing_a_method(Language language)
+        {
+            // FIX: (Parentheses_are_inserted_when_completing_a_method) now do F#
+            var kernel = CreateKernel(language);
+
+            var markupCode = "Console.Wri$$";
+
+            MarkupTestFile.GetLineAndColumn(markupCode, out var code, out var line, out var character);
+
+            await kernel.SendAsync(new RequestCompletions(code, new LinePosition(line, character)));
+
+            KernelEvents
+                .Should()
+                .ContainSingle<CompletionsProduced>()
+                .Which
+                .Completions
+                .Should()
+                .Contain(item => item.InsertText == "WriteLine(");
+        }
+
+        [Theory]
+        [InlineData(Language.CSharp)]
+        public async Task Angle_brackets_are_displayed_in_completions_for_generic_methods(Language language)
+        {
+            // FIX: (Angle_brackets_are_displayed_in_completions_for_generic_methods) now do F#
+
+            var kernel = CreateKernel(language);
+            await kernel.SubmitCodeAsync(language switch
+            {
+                Language.CSharp => $"using {typeof(Formatter).Namespace}.{nameof(Formatter)};"
+            });
+
+            var markupCode = "Formatter.Regis$$";
+
+            MarkupTestFile.GetLineAndColumn(markupCode, out var code, out var line, out var character);
+
+            await kernel.SendAsync(new RequestCompletions(code, new LinePosition(line, character)));
+
+            KernelEvents
+                .Should()
+                .ContainSingle<CompletionsProduced>()
+                .Which
+                .Completions
+                .Should()
+                .Contain(item => item.DisplayText == "Formatter<>");
+
+            // TODO-JOSEQU (Angle_brackets_are_inserted_when_completing_a_generic_method) write test
+            Assert.True(false, "Test Angle_brackets_are_inserted_when_completing_a_generic_method is not written yet.");
         }
     }
 }
