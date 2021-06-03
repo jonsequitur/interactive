@@ -491,27 +491,21 @@ public class C
             // FIX: (Angle_brackets_are_displayed_in_completions_for_generic_methods) now do F#
 
             var kernel = CreateKernel(language);
-            await kernel.SubmitCodeAsync(language switch
-            {
-                Language.CSharp => $"using {typeof(Formatter).Namespace}.{nameof(Formatter)};"
-            });
 
-            var markupCode = "Formatter.Regis$$";
+            var markupCode = $"{typeof(Formatter).Namespace}.{nameof(Formatter)}.$$";
+            MarkupTestFile.GetLineAndColumn(markupCode, out var codeToComplete, out var line, out var character);
 
-            MarkupTestFile.GetLineAndColumn(markupCode, out var code, out var line, out var character);
+            var result2 = await kernel.SendAsync(new RequestCompletions(codeToComplete, new LinePosition(line, character)));
 
-            await kernel.SendAsync(new RequestCompletions(code, new LinePosition(line, character)));
-
-            KernelEvents
+            result2
+                .KernelEvents
+                .ToSubscribedList()
                 .Should()
                 .ContainSingle<CompletionsProduced>()
                 .Which
                 .Completions
                 .Should()
-                .Contain(item => item.DisplayText == "Formatter<>");
-
-            // TODO-JOSEQU (Angle_brackets_are_inserted_when_completing_a_generic_method) write test
-            Assert.True(false, "Test Angle_brackets_are_inserted_when_completing_a_generic_method is not written yet.");
+                .Contain(item => item.DisplayText == "Register<>");
         }
     }
 }

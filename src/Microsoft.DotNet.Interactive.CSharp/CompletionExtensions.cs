@@ -52,7 +52,7 @@ namespace Microsoft.DotNet.Interactive.CSharp
 
         public static CompletionItem ToModel(this RoslynCompletionItem item, RoslynCompletionDescription description)
         {
-            return new CompletionItem(
+            return new(
                 displayText: item.DisplayText,
                 kind: item.GetKind(),
                 filterText: item.FilterText,
