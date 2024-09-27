@@ -1,6 +1,6 @@
 # Input prompts
 
-In a notebook, it's often useful to have certain values provided from outside. Query parameters, authentication tokens, and file paths are common examples of information used to parameterize a notebook in order to reuse it for different data or among different users. 
+In a notebook, it's often useful to have certain values provided from outside. Query parameters, authentication tokens, and file paths are common examples of information used to parameterize a notebook in order to reuse it with different data or among different users.
 
 There are a few different ways to avoid having to hard-code such values in your notebooks.
 
