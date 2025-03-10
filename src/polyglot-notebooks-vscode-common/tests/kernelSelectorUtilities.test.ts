@@ -61,5 +61,4 @@ describe('kernel selector utility tests', async () => {
             }
         ]);
     });
-
 });

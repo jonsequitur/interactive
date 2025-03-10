@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Loader;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.DotNet.Interactive.Events;
 using Pocket;
@@ -19,7 +20,7 @@ internal class PackageDirectoryExtensionLoader
     private const string ExtensionScriptName = "extension.dib";
 
     private readonly HashSet<AssemblyName> _loadedAssemblies = new();
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
 
     public async Task LoadFromDirectoryAsync(
         DirectoryInfo directory,
@@ -51,7 +52,7 @@ internal class PackageDirectoryExtensionLoader
             category: Log.Category,
             message: $"Loading extensions in directory {directory}",
             logOnStart: true,
-            args: new object[] { directory });
+            args: [directory]);
 
         await LoadFromDllsInDirectoryAsync(
             directory,
