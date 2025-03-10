@@ -80,6 +80,57 @@ PowerShell for .NET Core is required. This will uninstall any previous version o
 
 If you prefer a development environment that's more consistent with the out-of-the-box .NET experience, you can set the environment variable `DisableArcade` to `1`.
 
+
+### Testing Jupyter subkernel features
+
+Some tests require additional setup or will be skipped. `JupyterKernel` tests for example are set up to have the same test run against a Jupyter server, directly against the Jupyter kernel over ZMQ, and with a simulation of the messages. Jupyter server and Jupyter kernel tests require the following setup or will be skipped. The simulation tests can be run without additional steps. 
+
+#### Run tests with a local Jupyter Server
+
+1. Install [Jupyter server](https://docs.jupyter.org/en/latest/install.html) or [Anaconda](https://www.anaconda.com/products/distribution)
+
+2. [Install R kernel](https://docs.anaconda.com/anaconda/user-guide/tasks/using-r-language/) for R tests by calling the following in Anaconda Prompt (Windows) or the terminal (Mac/Linux)
+```
+conda install -c r r-irkernel
+```
+3. Start the server locally as mentioned [here](https://docs.jupyter.org/en/latest/running.html). You can use any random string or guid for your_token value.
+```
+jupyter notebook --no-browser --NotebookApp.token=<your_token> --port=8888
+```
+4. Set an environment variable `TEST_DOTNET_JUPYTER_HTTP_CONN` pointing to the server and the token you are using for the Jupyter server as 
+```
+--url http://localhost:8888 --token <your_token>
+```
+5. The tests will now use the environment variable to connect to your server. 
+
+#### Run tests with a Jupyter Kernel over ZMQ
+
+1. Install [Anaconda](https://www.anaconda.com/products/distribution)
+
+2. [Install R kernel](https://docs.anaconda.com/anaconda/user-guide/tasks/using-r-language/) for R tests by calling the following in Anaconda Prompt (Windows) or the terminal (Mac/Linux) 
+
+    ```console
+    conda install -c r r-irkernel
+    ```
+
+3. Set an environment variable `TEST_DOTNET_JUPYTER_ZMQ_CONN` pointing to conda installation and environment that has jupyter installed
+```
+--conda-env base
+```
+
+4. The tests will now use the environment variable to connect to your server. 
+
+#### Run tests directly against the language handler scripts
+
+These tests can be run directly against the language handler scripts. This is useful for when making changes on the scripts sent to the jupyter kernel without needing a full integration.
+
+1. Python tests can be run directly in the Anaconda Prompt with IPython by calling `src\Microsoft.DotNet.Interactive.Jupyter.Tests\LanguageHandlerTests\run_python_tests.bat`
+
+2. R tests can be run directly in the Anaconda Prompt with RScript by calling `src\Microsoft.DotNet.Interactive.Jupyter.Tests\LanguageHandlerTests\run_r_tests.bat`
+
+3. Both Python and R tests can be run together in the Anaconda Prompt by calling `src\Microsoft.DotNet.Interactive.Jupyter.Tests\LanguageHandlerTests\run_tests.bat`
+
+
 ## Building the Polyglot Notebooks extension for Visual Studio Code
 
 In order to build the Polyglot Notebooks extension for Visual Studio Code, please follow the instructions below. Note that it's not necessary to use a local build of `dotnet-interactive` in order to work on the Visual Studio Code extension.
@@ -98,9 +149,25 @@ To get started, you'll need:
 
 1. (*Windows only*) Open a PowerShell terminal as administrator and run `<REPO-ROOT>/src/ensure-symlinks.ps1`.
 
-2. Follow the regular build instructions as given above.
+2. Open the `<REPO-ROOT>/src/polyglot-notebooks-vscode-insiders` directory in Visual Studio Code Insiders. (From your terminal, you can run `code-insiders <REPO-ROOT>/src/polyglot-notebooks-vscode-insiders`.)
 
-3. Open the `<REPO-ROOT>/src/polyglot-notebooks-vscode-insiders` directory in Visual Studio Code Insiders. (From your terminal, you can run `code-insiders <REPO-ROOT>/src/polyglot-notebooks-vscode-insiders`.)
+3. Run `npm install`. You might see an error like the following: 
+
+    ```console
+    npm ERR! code E401
+    npm ERR! Unable to authenticate, your authentication token seems to be invalid.
+    npm ERR! To correct this please trying logging in again with:
+    npm ERR!     npm login
+    ```
+
+   In this case, run the following commands in your terminal:
+
+   ```console
+   > npm install -g vsts-npm-auth --registry https://registry.npmjs.com --always-auth false
+   > vsts-npm-auth -config .npmrc -F
+   ```
+
+   You can now rerun `npm install`.
 
 4. Make the desired source code changes.
 
@@ -193,53 +260,4 @@ If you've made changes to the Polyglot Notebooks extension and want to try your 
 
 8. Now, use the kernel as you normally would. You should see your local changes being used by the extension.
 
-
-### Set up full suite of tests to run
-
-Some tests require additional setup or will be skipped. `JupyterKernel` tests for example are set up to have the same test run against a Jupyter server, directly against the Jupyter kernel over ZMQ, and with a simulation of the messages. Jupyter server and Jupyter kernel tests require the following setup or will be skipped. The simulation tests can be run without additional steps. 
-
-### Run tests with a local Jupyter Server
-
-1. Install [Jupyter server](https://docs.jupyter.org/en/latest/install.html) or [Anaconda](https://www.anaconda.com/products/distribution)
-
-2. [Install R kernel](https://docs.anaconda.com/anaconda/user-guide/tasks/using-r-language/) for R tests by calling the following in Anaconda Prompt (Windows) or the terminal (Mac/Linux)
-```
-conda install -c r r-irkernel
-```
-3. Start the server locally as mentioned [here](https://docs.jupyter.org/en/latest/running.html). You can use any random string or guid for your_token value.
-```
-jupyter notebook --no-browser --NotebookApp.token=<your_token> --port=8888
-```
-4. Set an environment variable `TEST_DOTNET_JUPYTER_HTTP_CONN` pointing to the server and the token you are using for the Jupyter server as 
-```
---url http://localhost:8888 --token <your_token>
-```
-5. The tests will now use the environment variable to connect to your server. 
-
-### Run tests with a Jupyter Kernel over ZMQ
-
-1. Install [Anaconda](https://www.anaconda.com/products/distribution)
-
-2. [Install R kernel](https://docs.anaconda.com/anaconda/user-guide/tasks/using-r-language/) for R tests by calling the following in Anaconda Prompt (Windows) or the terminal (Mac/Linux) 
-
-    ```console
-    conda install -c r r-irkernel
-    ```
-
-3. Set an environment variable `TEST_DOTNET_JUPYTER_ZMQ_CONN` pointing to conda installation and environment that has jupyter installed
-```
---conda-env base
-```
-
-4. The tests will now use the environment variable to connect to your server. 
-
-### Run tests directly against the language handler scripts
-
-These tests can be run directly against the language handler scripts. This is useful for when making changes on the scripts sent to the jupyter kernel without needing a full integration.
-
-1. Python tests can be run directly in the Anaconda Prompt with IPython by calling `src\Microsoft.DotNet.Interactive.Jupyter.Tests\LanguageHandlerTests\run_python_tests.bat`
-
-2. R tests can be run directly in the Anaconda Prompt with RScript by calling `src\Microsoft.DotNet.Interactive.Jupyter.Tests\LanguageHandlerTests\run_r_tests.bat`
-
-3. Both Python and R tests can be run together in the Anaconda Prompt by calling `src\Microsoft.DotNet.Interactive.Jupyter.Tests\LanguageHandlerTests\run_tests.bat`
 

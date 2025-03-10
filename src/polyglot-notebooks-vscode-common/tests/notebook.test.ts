@@ -18,7 +18,6 @@ import {
     DiagnosticSeverity,
     DiagnosticsProducedType,
     DisplayedValueProducedType,
-    DisplayedValueUpdatedType,
     ReturnValueProducedType,
     StandardOutputValueProducedType,
 } from '../../src/vscode-common/polyglot-notebooks/contracts';
@@ -517,4 +516,5 @@ Console.WriteLine(3);
             expect(languageToCellKind(language)).to.equal(vscodeLike.NotebookCellKind.Markup);
         }
     });
+
 });
